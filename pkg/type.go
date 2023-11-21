@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/joshmeranda/meetup/pkg/driver"
 )
@@ -35,7 +36,7 @@ func DefaultConfig() (Config, error) {
 
 	return Config{
 		RootDir:       path.Join(homeDir, ".meetup"),
-		DefaultDomain: "nodomain",
+		DefaultDomain: "default",
 		GroupBy:       GroupByDomain,
 		Driver: driver.DriverConfig{
 			DriverBackend: driver.DriverBackendSimple,
@@ -70,9 +71,11 @@ func NewManager(config Config) (Manager, error) {
 }
 
 func (m Manager) pathForMeeting(meeting Meeting) string {
+	domainComponents := path.Join(strings.Split(meeting.Domain, ".")...)
+
 	switch m.Config.GroupBy {
 	case GroupByDomain:
-		return path.Join(m.Config.RootDir, meeting.Domain, meeting.Date, meeting.Name)
+		return path.Join(m.Config.RootDir, domainComponents, meeting.Date, meeting.Name)
 	case GroupByDate:
 		return path.Join(m.Config.RootDir, meeting.Date, meeting.Domain, meeting.Name)
 	default:

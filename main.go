@@ -39,7 +39,6 @@ func LoadManagerConfig() (meetup.Config, error) {
 		return meetup.Config{}, fmt.Errorf("could not read config file: %w", err)
 	}
 
-	// config := meetup.Config{}
 	if err := yaml.Unmarshal(bytes, &config); err != nil {
 		return meetup.Config{}, fmt.Errorf("could not parse config file: %w", err)
 	}
