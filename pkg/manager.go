@@ -77,13 +77,17 @@ func (m Manager) pathForMeeting(meeting Meeting) string {
 	case GroupByDomain:
 		return path.Join(m.Config.RootDir, domainComponents, meeting.Date, meeting.Name)
 	case GroupByDate:
-		return path.Join(m.Config.RootDir, meeting.Date, meeting.Domain, meeting.Name)
+		return path.Join(m.Config.RootDir, meeting.Date, domainComponents, meeting.Name)
 	default:
 		panic(fmt.Sprintf("unknown group_by: %s", m.Config.GroupBy))
 	}
 }
 
 func (m Manager) AddMeeting(meeting Meeting) error {
+	if meeting.Domain == "" {
+		meeting.Domain = m.Config.DefaultDomain
+	}
+
 	path := m.pathForMeeting(meeting)
 	return m.driver.Open(path)
 }

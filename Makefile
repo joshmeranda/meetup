@@ -48,6 +48,16 @@ bin/meetup: ${SOURCES}
 install: bin/meetup
 	${GO_INSTALL} .
 
+
+# # # # # # # # # # # # # # # # # # # #
+# Test                                #
+# # # # # # # # # # # # # # # # # # # #
+
+.PHONY: test
+
+test:
+	${GO_TEST} ./...
+
 # # # # # # # # # # # # # # # # # # # #
 # Clean                               #
 # # # # # # # # # # # # # # # # # # # #

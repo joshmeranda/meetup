@@ -69,7 +69,6 @@ func New(ctx *cli.Context) error {
 		name = ctx.Args().First()
 	case 1:
 		name = ctx.Args().First()
-		domain = manager.Config.DefaultDomain
 	case 0:
 		return fmt.Errorf("missing required meeting name")
 	default:

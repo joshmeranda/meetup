@@ -11,15 +11,25 @@ type DriverBackend string
 
 const (
 	DriverBackendSimple DriverBackend = "simple"
+
+	// DriverBackendCallback is a special driver used for testing.
+	DriverBackendCallback DriverBackend = "Callback"
 )
 
 type SimpleDriverConfig struct {
 	Command []string `yaml:"command"`
 }
 
+type CallbackDriverConfig struct {
+	Fn func(files ...string) error
+}
+
 type DriverConfig struct {
 	DriverBackend DriverBackend       `yaml:"backend"`
 	SimpleConfig  *SimpleDriverConfig `yaml:"simple"`
+
+	// CallbackConfig is used for testing only.
+	CallbackConfig *CallbackDriverConfig
 }
 
 type Driver interface {
@@ -30,20 +40,24 @@ func NewDriver(config DriverConfig) (Driver, error) {
 	switch config.DriverBackend {
 	case DriverBackendSimple:
 		// todo: if config is nil, use EDITOR env to create (right now this will panic is nil)
-		return NewSimpleDriver(*config.SimpleConfig)
+		return newSimpleDriver(*config.SimpleConfig)
+	case DriverBackendCallback:
+		return CallbackDriver{
+			CallbackDriverConfig: *config.CallbackConfig,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown driver backend: %s", config.DriverBackend)
 	}
 }
 
-// SimpleDriver is a basic driver that runs a command with the given file as input.
-type SimpleDriver struct {
+// simpleDriver is a basic driver that runs a command with the given file as input.
+type simpleDriver struct {
 	SimpleDriverConfig
 
 	cmd *exec.Cmd
 }
 
-func NewSimpleDriver(config SimpleDriverConfig) (Driver, error) {
+func newSimpleDriver(config SimpleDriverConfig) (Driver, error) {
 	foundPath, err := exec.LookPath(config.Command[0])
 	if err != nil {
 		return nil, fmt.Errorf("could not create driver from nonexistant file: %w", err)
@@ -54,13 +68,13 @@ func NewSimpleDriver(config SimpleDriverConfig) (Driver, error) {
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 
-	return SimpleDriver{
+	return simpleDriver{
 		SimpleDriverConfig: config,
 		cmd:                cmd,
 	}, nil
 }
 
-func (d SimpleDriver) Open(files ...string) error {
+func (d simpleDriver) Open(files ...string) error {
 	newCmd := *d.cmd
 	newCmd.Args = append(newCmd.Args, files...)
 
@@ -76,4 +90,12 @@ func (d SimpleDriver) Open(files ...string) error {
 	}
 
 	return nil
+}
+
+type CallbackDriver struct {
+	CallbackDriverConfig
+}
+
+func (d CallbackDriver) Open(files ...string) error {
+	return d.Fn(files...)
 }
