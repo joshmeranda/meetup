@@ -109,15 +109,23 @@ func List(ctx *cli.Context) error {
 }
 
 func Remove(ctx *cli.Context) error {
+	if ctx.NArg() < 3 {
+		return fmt.Errorf("missing required arguments")
+	}
+
+	if ctx.NArg() > 3 {
+		return fmt.Errorf("too many arguments")
+	}
+
 	manager, err := GetManager()
 	if err != nil {
 		return err
 	}
 
 	err = manager.RemoveMeeting(meetup.Meeting{
-		Name:   ctx.String("name"),
-		Date:   ctx.String("date"),
-		Domain: ctx.String("domain"),
+		Name:   ctx.Args().Get(2),
+		Domain: ctx.Args().Get(1),
+		Date:   ctx.Args().Get(0),
 	})
 	if err != nil {
 		return err
@@ -138,11 +146,10 @@ func Run(args []string) error {
 				UsageText: "meetup new <name> [domain]",
 				Action:    Open,
 				Flags: []cli.Flag{
-					&cli.TimestampFlag{
-						Name:   "date",
-						Layout: DateFormat,
-						Usage:  "date of the meeting",
-						Value:  cli.NewTimestamp(time.Now()),
+					&cli.StringFlag{
+						Name:  "date",
+						Usage: "date of the meeting",
+						Value: cli.NewTimestamp(time.Now()).Value().Format(DateFormat),
 					},
 				},
 			},
@@ -174,16 +181,8 @@ func Run(args []string) error {
 				Name:      "remove",
 				Aliases:   []string{"rm"},
 				Usage:     "remove an existing meeting",
-				UsageText: "meetup remove <name> [domain]",
+				UsageText: "meetup remove <date> <domain> <name>",
 				Action:    Remove,
-				Flags: []cli.Flag{
-					&cli.TimestampFlag{
-						Name:   "date",
-						Layout: DateFormat,
-						Usage:  "date of the meeting",
-						Value:  cli.NewTimestamp(time.Now()),
-					},
-				},
 			},
 		},
 	}
