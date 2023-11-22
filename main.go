@@ -6,6 +6,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/gobwas/glob"
 	meetup "github.com/joshmeranda/meetup/pkg"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -55,7 +56,7 @@ func GetManager() (meetup.Manager, error) {
 	return meetup.NewManager(config)
 }
 
-func New(ctx *cli.Context) error {
+func Open(ctx *cli.Context) error {
 	manager, err := GetManager()
 	if err != nil {
 		return err
@@ -84,6 +85,47 @@ func New(ctx *cli.Context) error {
 	return nil
 }
 
+func List(ctx *cli.Context) error {
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+		Name:   glob.MustCompile(ctx.String("name")),
+		Date:   glob.MustCompile(ctx.String("date")),
+		Domain: glob.MustCompile(ctx.String("domain")),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, meeting := range meetings {
+		fmt.Println(meeting)
+	}
+
+	return nil
+}
+
+func Remove(ctx *cli.Context) error {
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	err = manager.RemoveMeeting(meetup.Meeting{
+		Name:   ctx.String("name"),
+		Date:   ctx.String("date"),
+		Domain: ctx.String("domain"),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Run(args []string) error {
 	app := cli.App{
 		Name:    "meetup",
@@ -91,10 +133,49 @@ func Run(args []string) error {
 		Usage:   "meetup is a tool for managing meeting notes",
 		Commands: []*cli.Command{
 			{
-				Name:      "new",
-				Usage:     "create a new meeting notepad",
+				Name:      "open",
+				Usage:     "open an existing or create a new meeting",
 				UsageText: "meetup new <name> [domain]",
-				Action:    New,
+				Action:    Open,
+				Flags: []cli.Flag{
+					&cli.TimestampFlag{
+						Name:   "date",
+						Layout: DateFormat,
+						Usage:  "date of the meeting",
+						Value:  cli.NewTimestamp(time.Now()),
+					},
+				},
+			},
+			{
+				Name:      "list",
+				Aliases:   []string{"ls"},
+				Usage:     "list existing meeting",
+				UsageText: "meetup list",
+				Action:    List,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "date",
+						Usage: "date of the meeting as a wildcard",
+						Value: "*",
+					},
+					&cli.StringFlag{
+						Name:  "name",
+						Usage: "the name of the meeting as a wildcard",
+						Value: "*",
+					},
+					&cli.StringFlag{
+						Name:  "domain",
+						Usage: "the domain of the meeting as a wildcard",
+						Value: "*",
+					},
+				},
+			},
+			{
+				Name:      "remove",
+				Aliases:   []string{"rm"},
+				Usage:     "remove an existing meeting",
+				UsageText: "meetup remove <name> [domain]",
+				Action:    Remove,
 				Flags: []cli.Flag{
 					&cli.TimestampFlag{
 						Name:   "date",

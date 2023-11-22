@@ -2,10 +2,13 @@ package meetup
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/joshmeranda/meetup/pkg/driver"
 )
 
@@ -53,6 +56,22 @@ type Meeting struct {
 	Domain string
 }
 
+func (m Meeting) String() string {
+	return fmt.Sprintf("%s %s %s", m.Date, m.Domain, m.Name)
+}
+
+type MeetingWildcard struct {
+	Name   glob.Glob
+	Domain glob.Glob
+	Date   glob.Glob
+}
+
+func (mw MeetingWildcard) Match(m Meeting) bool {
+	return mw.Name.Match(m.Name) &&
+		mw.Domain.Match(m.Domain) &&
+		mw.Date.Match(m.Date)
+}
+
 type Manager struct {
 	Config
 	driver driver.Driver
@@ -90,4 +109,35 @@ func (m Manager) AddMeeting(meeting Meeting) error {
 
 	path := m.pathForMeeting(meeting)
 	return m.driver.Open(path)
+}
+
+func (m Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
+	meetings := []Meeting{}
+
+	filepath.WalkDir(m.RootDir, func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() {
+			meeting, err := MeetingFromPath(m.GroupBy, strings.TrimPrefix(path, m.RootDir))
+			if err != nil {
+				return err
+			}
+
+			if mw.Match(meeting) {
+				meetings = append(meetings, meeting)
+			}
+		}
+
+		return nil
+	})
+
+	return meetings, nil
+}
+
+func (m Manager) RemoveMeeting(meeting Meeting) error {
+	path := m.pathForMeeting(meeting)
+
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("could not delete meeting: %w", err)
+	}
+
+	return nil
 }
