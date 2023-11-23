@@ -2,13 +2,14 @@ package meetup_test
 
 import (
 	"fmt"
-	"testing"
 
 	meetup "github.com/joshmeranda/meetup/pkg"
-	"github.com/stretchr/testify/assert"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestMeetingFromPath(t *testing.T) {
+var _ = Describe("MeetingFromPath", func() {
 	type TestCase struct {
 		Name    string
 		Path    string
@@ -68,13 +69,12 @@ func TestMeetingFromPath(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			meeting, err := meetup.MeetingFromPath(testCase.GroupBy, testCase.Path)
-
-			assert.Equal(t, testCase.Error, err)
-			assert.Equal(t, testCase.Meeting.Name, meeting.Name)
-			assert.Equal(t, testCase.Meeting.Domain, meeting.Domain)
-			assert.Equal(t, testCase.Meeting.Date, meeting.Date)
+		When(testCase.Name, func() {
+			It("parses as expected", func() {
+				meeting, err := meetup.MeetingFromPath(testCase.GroupBy, testCase.Path)
+				Expect(err).To(Equal(testCase.Error))
+				Expect(meeting).To(Equal(testCase.Meeting))
+			})
 		})
 	}
-}
+})

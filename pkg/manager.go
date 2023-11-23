@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/gobwas/glob"
-	"github.com/joshmeranda/meetup/pkg/driver"
 )
 
 type GroupStrategy string
@@ -20,10 +20,10 @@ const (
 )
 
 type Config struct {
-	RootDir       string              `yaml:"root_dir"`
-	DefaultDomain string              `yaml:"default_domain"`
-	GroupBy       GroupStrategy       `yaml:"group_by"`
-	Driver        driver.DriverConfig `yaml:"driver"`
+	RootDir       string        `yaml:"root_dir"`
+	DefaultDomain string        `yaml:"default_domain"`
+	GroupBy       GroupStrategy `yaml:"group_by"`
+	Editor        []string      `yaml:"editor"`
 }
 
 func DefaultConfig() (Config, error) {
@@ -41,12 +41,7 @@ func DefaultConfig() (Config, error) {
 		RootDir:       path.Join(homeDir, ".meetup"),
 		DefaultDomain: "default",
 		GroupBy:       GroupByDomain,
-		Driver: driver.DriverConfig{
-			DriverBackend: driver.DriverBackendSimple,
-			SimpleConfig: &driver.SimpleDriverConfig{
-				Command: []string{editor},
-			},
-		},
+		Editor:        []string{editor},
 	}, nil
 }
 
@@ -74,18 +69,25 @@ func (mw MeetingWildcard) Match(m Meeting) bool {
 
 type Manager struct {
 	Config
-	driver driver.Driver
+
+	baseCmd *exec.Cmd
 }
 
 func NewManager(config Config) (Manager, error) {
-	driver, err := driver.NewDriver(config.Driver)
+	if len(config.Editor) == 0 {
+		return Manager{}, fmt.Errorf("editor cannot be empty")
+	}
+
+	path, args := config.Editor[0], config.Editor[1:]
+	path, err := exec.LookPath(path)
 	if err != nil {
-		return Manager{}, fmt.Errorf("could not create driver: %w", err)
+		return Manager{}, fmt.Errorf("could not find editor: %w", err)
 	}
 
 	return Manager{
 		Config: config,
-		driver: driver,
+
+		baseCmd: exec.Command(path, args...),
 	}, nil
 }
 
@@ -102,20 +104,39 @@ func (m Manager) pathForMeeting(meeting Meeting) string {
 	}
 }
 
-func (m Manager) AddMeeting(meeting Meeting) error {
+func (m Manager) fillMeeting(meeting Meeting) Meeting {
 	if meeting.Domain == "" {
 		meeting.Domain = m.Config.DefaultDomain
 	}
 
-	path := m.pathForMeeting(meeting)
-	return m.driver.Open(path)
+	return meeting
+}
+
+// OpenMeeting opens a meeting in the editor, and creates it if it doesn't not exist.
+func (m Manager) OpenMeeting(meeting Meeting) error {
+	meeting = m.fillMeeting(meeting)
+	meetingPath := m.pathForMeeting(meeting)
+	meetingDir := path.Dir(meetingPath)
+
+	if err := os.MkdirAll(meetingDir, 0755); err != nil {
+		return fmt.Errorf("could not create meeting directory: %w", err)
+	}
+
+	cmd := *m.baseCmd
+	cmd.Args = append(cmd.Args, meetingPath)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("could not open editor: %w", err)
+	}
+
+	return nil
 }
 
 func (m Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 	meetings := []Meeting{}
 
-	filepath.WalkDir(m.RootDir, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() {
+	filepath.WalkDir(m.RootDir, func(path string, entry fs.DirEntry, err error) error {
+		if !entry.IsDir() {
 			meeting, err := MeetingFromPath(m.GroupBy, strings.TrimPrefix(path, m.RootDir))
 			if err != nil {
 				return err
@@ -133,6 +154,7 @@ func (m Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 }
 
 func (m Manager) RemoveMeeting(meeting Meeting) error {
+	meeting = m.fillMeeting(meeting)
 	path := m.pathForMeeting(meeting)
 
 	if err := os.Remove(path); err != nil {

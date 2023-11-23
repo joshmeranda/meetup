@@ -1,98 +1,111 @@
 package meetup_test
 
 import (
-	"testing"
+	"os"
+	"path"
 
+	"github.com/gobwas/glob"
 	meetup "github.com/joshmeranda/meetup/pkg"
-	"github.com/joshmeranda/meetup/pkg/driver"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestManagerGroupByDomain(t *testing.T) {
-	actual := []string{}
+var _ = Describe("Manager", Ordered, func() {
+	var manager meetup.Manager
+	var err error
 
-	manager, err := meetup.NewManager(meetup.Config{
-		RootDir:       "/",
-		DefaultDomain: "default",
-		GroupBy:       meetup.GroupByDomain,
-		Driver: driver.DriverConfig{
-			DriverBackend: driver.DriverBackendCallback,
-			CallbackConfig: &driver.CallbackDriverConfig{
-				Fn: func(files ...string) error {
-					actual = append(actual, files...)
-					return nil
-				},
+	meetupDir := "meetup-test"
+
+	BeforeAll(func() {
+		manager, err = meetup.NewManager(meetup.Config{
+			RootDir:       meetupDir,
+			DefaultDomain: "default",
+			GroupBy:       meetup.GroupByDomain,
+			Editor:        []string{"touch"},
+		})
+
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	AfterAll(func() {
+		os.RemoveAll(meetupDir)
+	})
+
+	It("can open meetings", func() {
+		err = manager.OpenMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = manager.OpenMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "single.double",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = manager.OpenMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "single",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(path.Join(meetupDir, "default", "2021-01-01", "sample")).Should(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "single", "2021-01-01", "sample")).Should(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "single", "double", "2021-01-01", "sample")).Should(BeAnExistingFile())
+	})
+
+	It("can list meetings", func() {
+		meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+			Date:   glob.MustCompile("*"),
+			Name:   glob.MustCompile("*"),
+			Domain: glob.MustCompile("*double"),
+		})
+		expected := []meetup.Meeting{
+			{
+				Name:   "sample",
+				Domain: "single.double",
+				Date:   "2021-01-01",
 			},
-		},
+		}
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(meetings).To(ConsistOf(expected))
 	})
 
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "",
-		Date:   "2021-01-01",
-	})
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "single",
-		Date:   "2021-01-01",
-	})
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "single.double",
-		Date:   "2021-01-01",
-	})
+	It("can remove meetings", func() {
+		err = manager.RemoveMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
 
-	expected := []string{
-		"/default/2021-01-01/sample",
-		"/single/2021-01-01/sample",
-		"/single/double/2021-01-01/sample",
-	}
+		err = manager.RemoveMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "single",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
 
-	require.NoError(t, err)
-	assert.ElementsMatch(t, expected, actual)
-}
-
-func TestManagerGroupByDate(t *testing.T) {
-	actual := []string{}
-
-	manager, err := meetup.NewManager(meetup.Config{
-		RootDir:       "/",
-		DefaultDomain: "default",
-		GroupBy:       meetup.GroupByDate,
-		Driver: driver.DriverConfig{
-			DriverBackend: driver.DriverBackendCallback,
-			CallbackConfig: &driver.CallbackDriverConfig{
-				Fn: func(files ...string) error {
-					actual = append(actual, files...)
-					return nil
-				},
-			},
-		},
+		err = manager.RemoveMeeting(meetup.Meeting{
+			Name:   "sample",
+			Domain: "single.double",
+			Date:   "2021-01-01",
+		})
+		Expect(err).ToNot(HaveOccurred())
 	})
 
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "",
-		Date:   "2021-01-01",
+	It("cannot remove non-existent meetings", func() {
+		err = manager.RemoveMeeting(meetup.Meeting{
+			Name:   "i-dont-exist",
+			Domain: "no.exist",
+			Date:   "2021-01-01",
+		})
+		Expect(err).To(HaveOccurred())
 	})
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "single",
-		Date:   "2021-01-01",
-	})
-	manager.AddMeeting(meetup.Meeting{
-		Name:   "sample",
-		Domain: "single.double",
-		Date:   "2021-01-02",
-	})
-
-	expected := []string{
-		"/2021-01-01/default/sample",
-		"/2021-01-01/single/sample",
-		"/2021-01-02/single/double/sample",
-	}
-
-	require.NoError(t, err)
-	assert.ElementsMatch(t, expected, actual)
-}
+})

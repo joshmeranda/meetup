@@ -24,12 +24,12 @@ func LoadManagerConfig() (meetup.Config, error) {
 		return meetup.Config{}, fmt.Errorf("could not create default config: %w", err)
 	}
 
-	configDir, err := os.UserConfigDir()
+	configDir, err := os.UserHomeDir()
 	if err != nil {
 		return meetup.Config{}, fmt.Errorf("could not find user config dir: %w", err)
 	}
 
-	configPath := path.Join(configDir, "meetup", "config.yaml")
+	configPath := path.Join(configDir, ".meetup", "config.yaml")
 
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
@@ -57,29 +57,26 @@ func GetManager() (meetup.Manager, error) {
 }
 
 func Open(ctx *cli.Context) error {
+	if ctx.NArg() > 2 {
+		return fmt.Errorf("too many arguments")
+	}
+
+	if ctx.NArg() < 2 {
+		return fmt.Errorf("missing required arguments")
+	}
+
+	domain := ctx.Args().Get(0)
+	name := ctx.Args().Get(1)
+
 	manager, err := GetManager()
 	if err != nil {
 		return err
 	}
 
-	var name, domain string
-
-	switch ctx.NArg() {
-	case 2:
-		domain = ctx.Args().Get(1)
-		name = ctx.Args().First()
-	case 1:
-		name = ctx.Args().First()
-	case 0:
-		return fmt.Errorf("missing required meeting name")
-	default:
-		return fmt.Errorf("too many arguments")
-	}
-
-	manager.AddMeeting(meetup.Meeting{
+	manager.OpenMeeting(meetup.Meeting{
 		Name:   name,
 		Domain: domain,
-		Date:   ctx.Timestamp("date").Format(DateFormat),
+		Date:   ctx.String("date"),
 	})
 
 	return nil
@@ -143,13 +140,20 @@ func Run(args []string) error {
 			{
 				Name:      "open",
 				Usage:     "open an existing or create a new meeting",
-				UsageText: "meetup new <name> [domain]",
+				UsageText: "meetup open <domain> <name>",
 				Action:    Open,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "date",
 						Usage: "date of the meeting",
 						Value: cli.NewTimestamp(time.Now()).Value().Format(DateFormat),
+						Action: func(ctx *cli.Context, date string) error {
+							if _, err := time.Parse(DateFormat, date); err != nil {
+								return fmt.Errorf("invalid date format: %w", err)
+							}
+
+							return nil
+						},
 					},
 				},
 			},

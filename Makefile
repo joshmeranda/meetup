@@ -10,12 +10,14 @@ GO_BUILD=go build ${BUILD_FLAGS}
 GO_INSTALL=go install ${BUILD_FLAGS}
 GO_FMT=go fmt
 GO_TEST=go test
+GINKGO=ginkgo run
 
 ifdef VERBOSE
 	GO_BUILD += -v
 	GO_INSTALL += -v
 	GO_FMT += -x
 	GO_TEST += -test.v
+	GINKGO += -v
 
 	RM += --verbose
 endif
@@ -56,7 +58,7 @@ install: bin/meetup
 .PHONY: test
 
 test:
-	${GO_TEST} ./...
+	${GINKGO} ./pkg
 
 # # # # # # # # # # # # # # # # # # # #
 # Clean                               #
