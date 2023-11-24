@@ -57,9 +57,14 @@ func NewManager(config Config) (Manager, error) {
 		return Manager{}, fmt.Errorf("could not find editor: %w", err)
 	}
 
+	cmd := exec.Command(path, args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+
 	return Manager{
 		Config: config,
 
-		baseCmd: exec.Command(path, args...),
+		baseCmd: cmd,
 	}, nil
 }

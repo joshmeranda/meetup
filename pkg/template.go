@@ -12,10 +12,15 @@ const (
 	TemplateDir = ".templates"
 )
 
-// todo: allow set deafult template for a domain
+// todo: allow set deafult template
 
 func (m Manager) AddTemplate(paths ...string) error {
 	dir := path.Join(m.RootDir, TemplateDir)
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("could not add template: %w", err)
+	}
+
 	for _, src := range paths {
 		dst := path.Join(dir, path.Base(src))
 

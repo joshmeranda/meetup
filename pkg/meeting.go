@@ -112,6 +112,10 @@ func (m Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 	meetings := []Meeting{}
 
 	filepath.WalkDir(m.RootDir, func(path string, entry fs.DirEntry, err error) error {
+		if entry == nil {
+			return nil
+		}
+
 		if !entry.IsDir() {
 			meeting, err := MeetingFromPath(m.GroupBy, strings.TrimPrefix(path, m.RootDir))
 			if err != nil {

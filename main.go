@@ -56,7 +56,7 @@ func GetManager() (meetup.Manager, error) {
 	return meetup.NewManager(config)
 }
 
-func Open(ctx *cli.Context) error {
+func MeetingOpen(ctx *cli.Context) error {
 	if ctx.NArg() > 2 {
 		return fmt.Errorf("too many arguments")
 	}
@@ -74,15 +74,16 @@ func Open(ctx *cli.Context) error {
 	}
 
 	manager.OpenMeeting(meetup.Meeting{
-		Name:   name,
-		Domain: domain,
-		Date:   ctx.String("date"),
+		Name:     name,
+		Domain:   domain,
+		Date:     ctx.String("date"),
+		Template: ctx.String("template"),
 	})
 
 	return nil
 }
 
-func List(ctx *cli.Context) error {
+func MeetingList(ctx *cli.Context) error {
 	manager, err := GetManager()
 	if err != nil {
 		return err
@@ -105,7 +106,7 @@ func List(ctx *cli.Context) error {
 	return nil
 }
 
-func Remove(ctx *cli.Context) error {
+func MeetingRemove(ctx *cli.Context) error {
 	if ctx.NArg() < 3 {
 		return fmt.Errorf("missing required arguments")
 	}
@@ -137,6 +138,53 @@ func TemplateAdd(ctx *cli.Context) error {
 		return fmt.Errorf("expected template paths, but found none")
 	}
 
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	for _, template := range templates {
+		if err := manager.AddTemplate(template); err != nil {
+			return fmt.Errorf("could not add template: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func TemplateList(ctx *cli.Context) error {
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	templates, err := manager.ListTemplates()
+	if err != nil {
+		return err
+	}
+
+	for _, template := range templates {
+		fmt.Println(template)
+	}
+
+	return nil
+}
+
+func TemplateRemove(ctx *cli.Context) error {
+	templates := ctx.Args().Slice()
+	if len(templates) == 0 {
+		return fmt.Errorf("expected template names, but found none")
+	}
+
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	if err := manager.RemoveTemplate(templates...); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -147,62 +195,87 @@ func Run(args []string) error {
 		Usage:   "meetup is a tool for managing meeting notes",
 		Commands: []*cli.Command{
 			{
-				Name:      "open",
-				Usage:     "open an existing or create a new meeting",
-				UsageText: "meetup open <domain> <name>",
-				Action:    Open,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "date",
-						Usage: "date of the meeting",
-						Value: cli.NewTimestamp(time.Now()).Value().Format(DateFormat),
-						Action: func(ctx *cli.Context, date string) error {
-							if _, err := time.Parse(DateFormat, date); err != nil {
-								return fmt.Errorf("invalid date format: %w", err)
-							}
+				Name:  "meeting",
+				Usage: "manage meetings",
+				Subcommands: []*cli.Command{
+					{
+						Name:      "open",
+						Usage:     "open an existing or create a new meeting",
+						UsageText: "meetup open <domain> <name>",
+						Action:    MeetingOpen,
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:  "date",
+								Usage: "date of the meeting",
+								Value: cli.NewTimestamp(time.Now()).Value().Format(DateFormat),
+								Action: func(ctx *cli.Context, date string) error {
+									if _, err := time.Parse(DateFormat, date); err != nil {
+										return fmt.Errorf("invalid date format: %w", err)
+									}
 
-							return nil
+									return nil
+								},
+							},
+							&cli.StringFlag{
+								Name:    "template",
+								Usage:   "template to use for the meeting",
+								Aliases: []string{"t"},
+							},
 						},
 					},
+					{
+						Name:      "list",
+						Aliases:   []string{"ls"},
+						Usage:     "list existing meeting",
+						UsageText: "meetup list",
+						Action:    MeetingList,
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:  "date",
+								Usage: "date of the meeting as a wildcard",
+								Value: "*",
+							},
+							&cli.StringFlag{
+								Name:  "name",
+								Usage: "the name of the meeting as a wildcard",
+								Value: "*",
+							},
+							&cli.StringFlag{
+								Name:  "domain",
+								Usage: "the domain of the meeting as a wildcard",
+								Value: "*",
+							},
+						},
+					},
+					{
+						Name:      "remove",
+						Aliases:   []string{"rm"},
+						Usage:     "remove an existing meeting",
+						UsageText: "meetup remove <date> <domain> <name>",
+						Action:    MeetingRemove,
+					},
 				},
-			},
-			{
-				Name:      "list",
-				Aliases:   []string{"ls"},
-				Usage:     "list existing meeting",
-				UsageText: "meetup list",
-				Action:    List,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "date",
-						Usage: "date of the meeting as a wildcard",
-						Value: "*",
-					},
-					&cli.StringFlag{
-						Name:  "name",
-						Usage: "the name of the meeting as a wildcard",
-						Value: "*",
-					},
-					&cli.StringFlag{
-						Name:  "domain",
-						Usage: "the domain of the meeting as a wildcard",
-						Value: "*",
-					},
-				},
-			},
-			{
-				Name:      "remove",
-				Aliases:   []string{"rm"},
-				Usage:     "remove an existing meeting",
-				UsageText: "meetup remove <date> <domain> <name>",
-				Action:    Remove,
 			},
 			{
 				Name:  "template",
 				Usage: "manage meeting templates",
 				Subcommands: []*cli.Command{
 					{
-						Name: "add",
+						Name:   "add",
+						Usage:  "add a new template",
+						Action: TemplateAdd,
+					},
+					{
+						Name:    "list",
+						Aliases: []string{"ls"},
+						Usage:   "list existing templates",
+						Action:  TemplateList,
+					},
+					{
+						Name:    "remove",
+						Aliases: []string{"rm"},
+						Usage:   "remove a template",
+						Action:  TemplateRemove,
 					},
 				},
 			},
