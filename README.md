@@ -7,5 +7,5 @@ A simple command line interface to managing your meeting notes.
 - [ ] templates
 - [ ] switch between group by modes
 - [ ] track todos
-- [ ] list meetings with wildcard
+- [x] list meetings with wildcard
 - [ ] add metadata to meetup dir (ex to show the group by strategy)

@@ -131,6 +131,15 @@ func Remove(ctx *cli.Context) error {
 	return nil
 }
 
+func TemplateAdd(ctx *cli.Context) error {
+	templates := ctx.Args().Slice()
+	if len(templates) == 0 {
+		return fmt.Errorf("expected template paths, but found none")
+	}
+
+	return nil
+}
+
 func Run(args []string) error {
 	app := cli.App{
 		Name:    "meetup",
@@ -187,6 +196,15 @@ func Run(args []string) error {
 				Usage:     "remove an existing meeting",
 				UsageText: "meetup remove <date> <domain> <name>",
 				Action:    Remove,
+			},
+			{
+				Name:  "template",
+				Usage: "manage meeting templates",
+				Subcommands: []*cli.Command{
+					{
+						Name: "add",
+					},
+				},
 			},
 		},
 	}

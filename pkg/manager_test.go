@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Manager", Ordered, func() {
+var _ = Describe("ManageMeeting", Ordered, func() {
 	var manager meetup.Manager
 	var err error
 
