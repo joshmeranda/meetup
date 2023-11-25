@@ -16,8 +16,8 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 
 	BeforeAll(func() {
 		meetupDir = "meetup-test"
-		templateSrc = path.Join(exampleDir, "template.md")
-		templateDst = path.Join(meetupDir, meetup.TemplateDir, "template.md")
+		templateSrc = path.Join(exampleDir, "templates", "simple.md")
+		templateDst = path.Join(meetupDir, meetup.TemplateDir, "simple.md")
 
 		manager, err = meetup.NewManager(meetup.Config{
 			RootDir:       meetupDir,
@@ -39,7 +39,7 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 	It("can list templates", func() {
 		templates, err := manager.ListTemplates()
 		Expect(err).ToNot(HaveOccurred())
-		Expect(templates).To(ContainElement("template.md"))
+		Expect(templates).To(ContainElement("simple.md"))
 	})
 
 	It("can open a meeting with a template", func() {
@@ -47,7 +47,7 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 			Name:     "example-meeting",
 			Date:     "2021-01-01",
 			Domain:   "meetup.template.test",
-			Template: "template.md",
+			Template: "simple.md",
 		})
 		Expect(err).ToNot(HaveOccurred())
 
@@ -60,8 +60,8 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 	})
 
 	It("can remove templates", func() {
-		err = manager.RemoveTemplate("template.md")
+		err = manager.RemoveTemplate("simple.md")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(path.Join(meetupDir, meetup.TemplateDir, "template.md")).ShouldNot(BeAnExistingFile())
+		Expect(path.Join(meetupDir, meetup.TemplateDir, "simple.md")).ShouldNot(BeAnExistingFile())
 	})
 })
