@@ -67,4 +67,4 @@ test:
 .PHONY: clean
 
 clean:
-	${RM} bin
+	${RM} --recursive bin

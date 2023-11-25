@@ -1,0 +1,1 @@
+{{ .Date }} {{ .Domain }} {{.Name}}

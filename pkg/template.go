@@ -14,7 +14,7 @@ const (
 
 // todo: allow set deafult template
 
-func (m Manager) AddTemplate(paths ...string) error {
+func (m *Manager) AddTemplate(paths ...string) error {
 	dir := path.Join(m.RootDir, TemplateDir)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -32,7 +32,7 @@ func (m Manager) AddTemplate(paths ...string) error {
 	return nil
 }
 
-func (m Manager) ListTemplates() ([]string, error) {
+func (m *Manager) ListTemplates() ([]string, error) {
 	dir := path.Join(m.RootDir, TemplateDir)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -51,7 +51,7 @@ func (m Manager) ListTemplates() ([]string, error) {
 	return templates, nil
 }
 
-func (m Manager) RemoveTemplate(names ...string) error {
+func (m *Manager) RemoveTemplate(names ...string) error {
 	for _, name := range names {
 		if err := os.Remove(path.Join(m.RootDir, TemplateDir, name)); err != nil {
 			return fmt.Errorf("could not remove template: %w", err)

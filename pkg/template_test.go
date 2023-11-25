@@ -22,7 +22,6 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 		manager, err = meetup.NewManager(meetup.Config{
 			RootDir:       meetupDir,
 			DefaultDomain: "default",
-			GroupBy:       meetup.GroupByDomain,
 			Editor:        []string{"touch"},
 		})
 	})

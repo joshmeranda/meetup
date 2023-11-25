@@ -12,16 +12,17 @@ import (
 )
 
 var _ = Describe("ManageMeeting", Ordered, func() {
+	var meetupDir string
 	var manager meetup.Manager
 	var err error
 
-	meetupDir := "meetup-test"
-
 	BeforeAll(func() {
+		meetupDir, err = os.MkdirTemp("", "meetup-test")
+		Expect(err).ToNot(HaveOccurred())
+
 		manager, err = meetup.NewManager(meetup.Config{
 			RootDir:       meetupDir,
 			DefaultDomain: "default",
-			GroupBy:       meetup.GroupByDomain,
 			Editor:        []string{"touch"},
 		})
 
@@ -33,26 +34,9 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 	})
 
 	It("can open meetings", func() {
-		err = manager.OpenMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		err = manager.OpenMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "single.double",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		err = manager.OpenMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "single",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
+		for _, meeting := range testMeetings {
+			Expect(manager.OpenMeeting(meeting)).ToNot(HaveOccurred())
+		}
 
 		Expect(path.Join(meetupDir, "default", "2021-01-01", "sample")).Should(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "single", "2021-01-01", "sample")).Should(BeAnExistingFile())
@@ -77,27 +61,23 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		Expect(meetings).To(ConsistOf(expected))
 	})
 
+	It("can re-organize meetup dirs", func() {
+		err = manager.UpdateMeetingGroupBy(meetup.GroupByDate)
+		Expect(err).ToNot(HaveOccurred())
+
+		data, err := os.ReadFile(path.Join(meetupDir, meetup.MetadataFilename))
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(data)).To(Equal("group_by: date\n"))
+
+		Expect(path.Join(meetupDir, "2021-01-01", "default", "sample")).Should(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "2021-01-01", "single", "sample")).Should(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "2021-01-01", "single", "double", "sample")).Should(BeAnExistingFile())
+	})
+
 	It("can remove meetings", func() {
-		err = manager.RemoveMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		err = manager.RemoveMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "single",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
-
-		err = manager.RemoveMeeting(meetup.Meeting{
-			Name:   "sample",
-			Domain: "single.double",
-			Date:   "2021-01-01",
-		})
-		Expect(err).ToNot(HaveOccurred())
+		for _, meeting := range testMeetings {
+			Expect(manager.RemoveMeeting(meeting)).ToNot(HaveOccurred())
+		}
 	})
 
 	It("cannot remove non-existent meetings", func() {

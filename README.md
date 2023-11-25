@@ -4,7 +4,7 @@ A simple command line interface to managing your meeting notes.
 
 ## Next Steps
 
-- [ ] templates
+- [x] templates
 - [ ] switch between group by modes
 - [ ] track todos
 - [x] list meetings with wildcard
