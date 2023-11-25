@@ -29,9 +29,8 @@ func DefaultMetadata() Metadata {
 }
 
 type Config struct {
-	RootDir       string   `yaml:"root_dir"`
-	DefaultDomain string   `yaml:"default_domain"`
-	Editor        []string `yaml:"editor"`
+	RootDir string   `yaml:"root_dir"`
+	Editor  []string `yaml:"editor"`
 }
 
 func DefaultConfig() (Config, error) {
@@ -46,9 +45,8 @@ func DefaultConfig() (Config, error) {
 	}
 
 	return Config{
-		RootDir:       path.Join(homeDir, ".meetup"),
-		DefaultDomain: "default",
-		Editor:        []string{editor},
+		RootDir: path.Join(homeDir, ".meetup"),
+		Editor:  []string{editor},
 	}, nil
 }
 

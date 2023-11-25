@@ -47,7 +47,7 @@ build: bin/meetup
 bin/meetup: ${SOURCES}
 	${GO_BUILD} -o $@ .
 
-install: bin/meetup
+install: ${SOURCES}
 	${GO_INSTALL} .
 
 

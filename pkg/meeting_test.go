@@ -21,9 +21,8 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		manager, err = meetup.NewManager(meetup.Config{
-			RootDir:       meetupDir,
-			DefaultDomain: "default",
-			Editor:        []string{"touch"},
+			RootDir: meetupDir,
+			Editor:  []string{"touch"},
 		})
 
 		Expect(err).ToNot(HaveOccurred())

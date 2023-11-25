@@ -20,9 +20,8 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 		templateDst = path.Join(meetupDir, meetup.TemplateDir, "simple.md")
 
 		manager, err = meetup.NewManager(meetup.Config{
-			RootDir:       meetupDir,
-			DefaultDomain: "default",
-			Editor:        []string{"touch"},
+			RootDir: meetupDir,
+			Editor:  []string{"touch"},
 		})
 	})
 

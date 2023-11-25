@@ -15,7 +15,7 @@ var (
 	testMeetings = []meetup.Meeting{
 		{
 			Name:   "sample",
-			Domain: "",
+			Domain: "default",
 			Date:   "2021-01-01",
 		}, {
 			Name:   "sample",

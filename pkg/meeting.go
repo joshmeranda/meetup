@@ -55,14 +55,6 @@ func (m *Manager) pathForMeeting(gs GroupStrategy, meeting Meeting, isBackup boo
 	}
 }
 
-func (m *Manager) fillMeeting(meeting Meeting) Meeting {
-	if meeting.Domain == "" {
-		meeting.Domain = m.Config.DefaultDomain
-	}
-
-	return meeting
-}
-
 func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
 	meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
 	meetingDir := path.Dir(meetingPath)
@@ -98,8 +90,6 @@ func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
 
 // OpenMeeting opens a meeting in the editor, and creates it if it doesn't not exist.
 func (m *Manager) OpenMeeting(meeting Meeting) error {
-	meeting = m.fillMeeting(meeting)
-
 	meetingPath, err := m.createMeetingFile(meeting)
 	if err != nil {
 		return fmt.Errorf("could not create meeting file: %w", err)
@@ -141,7 +131,6 @@ func (m *Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 }
 
 func (m *Manager) RemoveMeeting(meeting Meeting) error {
-	meeting = m.fillMeeting(meeting)
 	path := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
 
 	if err := os.Remove(path); err != nil {
@@ -196,6 +185,11 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 		if err := os.Rename(backupMeetingPath, meetingPath); err != nil {
 			return fmt.Errorf("could not move meeting: %w", err)
 		}
+	}
+
+	// we don't deferf this to prevent permanantly losing all meetings if something above goes wrong
+	if err := os.RemoveAll(rootBackup); err != nil {
+		return fmt.Errorf("could not remove backup: %w", err)
 	}
 
 	return nil
