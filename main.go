@@ -132,6 +132,35 @@ func MeetingRemove(ctx *cli.Context) error {
 	return nil
 }
 
+func UpdateGroupBy(ctx *cli.Context) error {
+	if ctx.NArg() > 1 {
+		return fmt.Errorf("too many arguments")
+	}
+
+	if ctx.NArg() < 1 {
+		return fmt.Errorf("missing required arguments")
+	}
+
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	newGs := meetup.GroupStrategy(ctx.Args().First())
+
+	switch newGs {
+	case meetup.GroupByDomain, meetup.GroupByDate:
+	default:
+		return fmt.Errorf("invalid group by strategy: %s", newGs)
+	}
+
+	if err := manager.UpdateMeetingGroupBy(newGs); err != nil {
+		return fmt.Errorf("could not update group by strategy: %w", err)
+	}
+
+	return nil
+}
+
 func TemplateAdd(ctx *cli.Context) error {
 	templates := ctx.Args().Slice()
 	if len(templates) == 0 {
@@ -253,6 +282,12 @@ func Run(args []string) error {
 						Usage:     "remove an existing meeting",
 						UsageText: "meetup remove <date> <domain> <name>",
 						Action:    MeetingRemove,
+					},
+					{
+						Name:    "group-by",
+						Aliases: []string{"gb"},
+						Usage:   "update group by strategy value",
+						Action:  UpdateGroupBy,
 					},
 				},
 			},

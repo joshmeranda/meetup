@@ -28,9 +28,9 @@ The main driver behind meeting up is the Manager, which handles all of the file 
 
 Some values you can only configure at the metup directory level (eg GroupBy). These can be found at `<meetup_dir>/.metadata`:
 
-| key        | type   | default | description                                                        |
-|------------|--------|---------|--------------------------------------------------------------------|
-| `group_by` | string | domain  | Specify how to group each meeting. Must be one of date, or domain. |
+| key        | type   | default | description                                                                                                                                            |
+|------------|--------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `group_by` | string | domain  | Specify how to group each meeting. Must be one of `date`, or `domain`. NOTE: do not change this manually, change via `meetup meeting group-by` instead |
 
 ### Meetings
 
