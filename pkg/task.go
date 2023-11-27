@@ -45,19 +45,20 @@ func (m *Manager) Tasks(query TaskQuery) ([]Task, error) {
 
 		// todo: we probably want to break this into a work group or something
 		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
 			var task Task
 			switch {
-			case strings.HasPrefix(scanner.Text(), DefaultTaskPrefix):
+			case strings.HasPrefix(line, DefaultTaskPrefix):
 				task = Task{
 					Meeting:     meeting,
 					Complete:    false,
-					Description: strings.TrimPrefix(scanner.Text(), DefaultTaskPrefix),
+					Description: strings.TrimPrefix(line, DefaultTaskPrefix),
 				}
-			case strings.HasPrefix(scanner.Text(), DefaultTaskCompletedPrefix):
+			case strings.HasPrefix(line, DefaultTaskCompletedPrefix):
 				task = Task{
 					Meeting:     meeting,
 					Complete:    true,
-					Description: strings.TrimPrefix(scanner.Text(), DefaultTaskCompletedPrefix),
+					Description: strings.TrimPrefix(line, DefaultTaskCompletedPrefix),
 				}
 			default:
 				continue

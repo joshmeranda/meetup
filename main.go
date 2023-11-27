@@ -217,7 +217,52 @@ func TemplateRemove(ctx *cli.Context) error {
 	return nil
 }
 
+func TaskList(ctx *cli.Context) error {
+	manager, err := GetManager()
+	if err != nil {
+		return err
+	}
+
+	var complete *bool
+
+	switch {
+	case ctx.Bool("complete"):
+		complete = new(bool)
+		*complete = true
+	case ctx.Bool("incomplete"):
+		complete = new(bool)
+		*complete = false
+	}
+
+	query := meetup.TaskQuery{
+		Meeting: meetup.MeetingWildcard{
+			Name:   glob.MustCompile(ctx.String("name")),
+			Domain: glob.MustCompile(ctx.String("domain")),
+			Date:   glob.MustCompile(ctx.String("date")),
+		},
+		Complete:    complete,
+		Description: glob.MustCompile(ctx.String("description")),
+	}
+
+	tasks, err := manager.Tasks(query)
+	if err != nil {
+		return nil
+	}
+
+	for _, task := range tasks {
+		checkBox := "❌"
+		if task.Complete {
+			checkBox = "✅"
+		}
+
+		fmt.Printf("[%s] %s %s\n", task.Meeting, checkBox, task.Description)
+	}
+
+	return nil
+}
+
 func Run(args []string) error {
+	// todo: duplicated meeting query flags
 	app := cli.App{
 		Name:    "meetup",
 		Version: Version,
@@ -313,6 +358,42 @@ func Run(args []string) error {
 						Action:  TemplateRemove,
 					},
 				},
+			},
+			{
+				Name:    "task",
+				Aliases: []string{"todo"},
+				Usage:   "list tasks",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "date",
+						Usage: "date of the meeting as a wildcard",
+						Value: "*",
+					},
+					&cli.StringFlag{
+						Name:  "name",
+						Usage: "the name of the meeting as a wildcard",
+						Value: "*",
+					},
+					&cli.StringFlag{
+						Name:  "domain",
+						Usage: "the domain of the meeting as a wildcard",
+						Value: "*",
+					},
+					&cli.BoolFlag{
+						Name:  "complete",
+						Usage: "show only completed tasks",
+					},
+					&cli.BoolFlag{
+						Name:  "incomplete",
+						Usage: "show only incomplete tasks",
+					},
+					&cli.StringFlag{
+						Name:  "description",
+						Usage: "the description of the task as a wildcard",
+						Value: "*",
+					},
+				},
+				Action: TaskList,
 			},
 		},
 	}
