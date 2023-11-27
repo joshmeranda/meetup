@@ -97,3 +97,22 @@ meetup open --template simple.md work.product.team scheduling
 
 ### Todos / Tasks
 
+Meetup also provides some basic support for tracking tasks accross meetings. To do this, we use the markdown task list syntax:
+
+```
+# Meeting Tasks
+
+ - [ ] make schedule
+ - [ ] distribute schedule
+ - [x] walk the office dog
+```
+
+Accessing the list above can be done with `meetup task` (or `meetup todo`). The command should render output like below:
+
+```
+[2023-11-27 tasks.test example] ❌ make schedule
+[2023-11-27 tasks.test example] ❌ distribute schedule
+[2023-11-27 tasks.test example] ✅ walk the office dog
+```
+
+See `meetpup task --help` for more details.
