@@ -32,6 +32,29 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		os.RemoveAll(meetupDir)
 	})
 
+	When("there are no meetings", func() {
+		It("can list meetings", func() {
+			meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+				Date:   glob.MustCompile("*"),
+				Name:   glob.MustCompile("*"),
+				Domain: glob.MustCompile("*"),
+			})
+			expected := []meetup.Meeting{}
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(meetings).To(ConsistOf(expected))
+		})
+
+		It("cannot remove non-existent meetings", func() {
+			err = manager.RemoveMeeting(meetup.Meeting{
+				Name:   "i-dont-exist",
+				Domain: "no.exist",
+				Date:   "2021-01-01",
+			})
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	It("can open meetings", func() {
 		for _, meeting := range testMeetings {
 			Expect(manager.OpenMeeting(meeting)).ToNot(HaveOccurred())
@@ -77,14 +100,5 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		for _, meeting := range testMeetings {
 			Expect(manager.RemoveMeeting(meeting)).ToNot(HaveOccurred())
 		}
-	})
-
-	It("cannot remove non-existent meetings", func() {
-		err = manager.RemoveMeeting(meetup.Meeting{
-			Name:   "i-dont-exist",
-			Domain: "no.exist",
-			Date:   "2021-01-01",
-		})
-		Expect(err).To(HaveOccurred())
 	})
 })

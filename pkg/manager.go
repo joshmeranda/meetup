@@ -9,6 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// todo: add default metadata to manager config
+
 type GroupStrategy string
 
 const (

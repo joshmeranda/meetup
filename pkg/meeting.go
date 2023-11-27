@@ -12,6 +12,11 @@ import (
 	"github.com/gobwas/glob"
 )
 
+const (
+	BackupSuffix  = ".backup"
+	BackupDirName = ".backup"
+)
+
 type Meeting struct {
 	Name     string
 	Date     string
@@ -26,7 +31,9 @@ func (m Meeting) String() string {
 type MeetingWildcard struct {
 	Name   glob.Glob
 	Domain glob.Glob
-	Date   glob.Glob
+
+	// todo: change to date range
+	Date glob.Glob
 }
 
 func (mw MeetingWildcard) Match(m Meeting) bool {
@@ -38,7 +45,7 @@ func (mw MeetingWildcard) Match(m Meeting) bool {
 func (m *Manager) pathForMeeting(gs GroupStrategy, meeting Meeting, isBackup bool) string {
 	var topLevel string
 	if isBackup {
-		topLevel = path.Join(m.Config.RootDir, ".backup")
+		topLevel = path.Join(m.Config.RootDir, BackupDirName)
 	} else {
 		topLevel = m.Config.RootDir
 	}
@@ -73,7 +80,7 @@ func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
 	defer outFile.Close()
 
 	if meeting.Template != "" {
-		templatePath := path.Join(m.Config.RootDir, TemplateDir, meeting.Template)
+		templatePath := path.Join(m.Config.RootDir, TemplateDirName, meeting.Template)
 
 		template, err := template.ParseFiles(templatePath)
 		if err != nil {
@@ -108,9 +115,13 @@ func (m *Manager) OpenMeeting(meeting Meeting) error {
 func (m *Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 	meetings := []Meeting{}
 
-	filepath.WalkDir(m.RootDir, func(path string, entry fs.DirEntry, err error) error {
-		if entry == nil {
-			return nil
+	err := filepath.WalkDir(m.RootDir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if entry.IsDir() && entry.Name() == TemplateDirName || entry.Name() == BackupDirName {
+			return filepath.SkipDir
 		}
 
 		if !entry.IsDir() {
@@ -127,6 +138,10 @@ func (m *Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
 		return nil
 	})
 
+	if err != nil {
+		return nil, fmt.Errorf("could not list meetings: %w", err)
+	}
+
 	return meetings, nil
 }
 
@@ -141,6 +156,7 @@ func (m *Manager) RemoveMeeting(meeting Meeting) error {
 }
 
 func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
+	// todo: doesn't handle pre-existing backups or templates
 	if m.metadata.GroupBy == newGs {
 		return nil
 	}
@@ -156,7 +172,7 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 		return fmt.Errorf("could not list meetings: %w", err)
 	}
 
-	rootBackup := m.RootDir + ".backup"
+	rootBackup := m.RootDir + BackupSuffix
 	if err := os.Rename(m.RootDir, rootBackup); err != nil {
 		return fmt.Errorf("could not backup root directory: %w", err)
 	}
@@ -170,7 +186,7 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 		return fmt.Errorf("could not sync metadata: %w", err)
 	}
 
-	if err := os.Rename(rootBackup, path.Join(m.RootDir, ".backup")); err != nil {
+	if err := os.Rename(rootBackup, path.Join(m.RootDir, BackupDirName)); err != nil {
 		return fmt.Errorf("could not move meeting backup, backup can be found at %s: %w", rootBackup, err)
 	}
 

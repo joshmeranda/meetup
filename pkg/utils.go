@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+// MeetingFromPath attemps to construct a Meeting from its path in the meetup dir.
+// todo: misses the Template field
 func MeetingFromPath(gs GroupStrategy, p string) (Meeting, error) {
 	components := strings.Split(strings.Trim(p, string(os.PathSeparator)), string(os.PathSeparator))
 

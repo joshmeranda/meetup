@@ -17,13 +17,15 @@ var (
 			Name:   "sample",
 			Domain: "default",
 			Date:   "2021-01-01",
-		}, {
-			Name:   "sample",
-			Domain: "single.double",
-			Date:   "2021-01-01",
-		}, {
+		},
+		{
 			Name:   "sample",
 			Domain: "single",
+			Date:   "2021-01-01",
+		},
+		{
+			Name:   "sample",
+			Domain: "single.double",
 			Date:   "2021-01-01",
 		},
 	}

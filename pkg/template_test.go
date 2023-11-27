@@ -17,7 +17,7 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 	BeforeAll(func() {
 		meetupDir = "meetup-test"
 		templateSrc = path.Join(exampleDir, "templates", "simple.md")
-		templateDst = path.Join(meetupDir, meetup.TemplateDir, "simple.md")
+		templateDst = path.Join(meetupDir, meetup.TemplateDirName, "simple.md")
 
 		manager, err = meetup.NewManager(meetup.Config{
 			RootDir: meetupDir,
@@ -61,6 +61,6 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 	It("can remove templates", func() {
 		err = manager.RemoveTemplate("simple.md")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(path.Join(meetupDir, meetup.TemplateDir, "simple.md")).ShouldNot(BeAnExistingFile())
+		Expect(path.Join(meetupDir, meetup.TemplateDirName, "simple.md")).ShouldNot(BeAnExistingFile())
 	})
 })

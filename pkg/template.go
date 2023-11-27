@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	TemplateDir = ".templates"
+	TemplateDirName = ".templates"
 )
 
 // todo: allow set deafult template
 
 func (m *Manager) AddTemplate(paths ...string) error {
-	dir := path.Join(m.RootDir, TemplateDir)
+	dir := path.Join(m.RootDir, TemplateDirName)
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("could not add template: %w", err)
@@ -33,7 +33,7 @@ func (m *Manager) AddTemplate(paths ...string) error {
 }
 
 func (m *Manager) ListTemplates() ([]string, error) {
-	dir := path.Join(m.RootDir, TemplateDir)
+	dir := path.Join(m.RootDir, TemplateDirName)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not list templates: %w", err)
@@ -53,7 +53,7 @@ func (m *Manager) ListTemplates() ([]string, error) {
 
 func (m *Manager) RemoveTemplate(names ...string) error {
 	for _, name := range names {
-		if err := os.Remove(path.Join(m.RootDir, TemplateDir, name)); err != nil {
+		if err := os.Remove(path.Join(m.RootDir, TemplateDirName, name)); err != nil {
 			return fmt.Errorf("could not remove template: %w", err)
 		}
 	}
