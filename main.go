@@ -24,12 +24,12 @@ func LoadManagerConfig() (meetup.Config, error) {
 		return meetup.Config{}, fmt.Errorf("could not create default config: %w", err)
 	}
 
-	configDir, err := os.UserHomeDir()
+	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return meetup.Config{}, fmt.Errorf("could not find user config dir: %w", err)
 	}
 
-	configPath := path.Join(configDir, ".meetup", "config.yaml")
+	configPath := path.Join(configDir, "meetup", "config.yaml")
 
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
