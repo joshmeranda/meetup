@@ -21,10 +21,11 @@ todo: make date required for removing meetings
 
 The main driver behind meeting up is the Manager, which handles all of the file management. The manager reads its configuration both from command line arguments as well from a configuration foudn in your user's default configuration directory under `meetup/config.yaml`. This configuration handles high-lvel concepts such as what editor to use and default domains.
 
-| key        | type     | default       | description                                           |
-|------------|----------|---------------|-------------------------------------------------------|
-| `root_dir` | string   | $HOME/.meetup | The local directory where meetup meetings are stored. |
-| `editor`   | []string | $EDITOR       | The command to use to open files.                     |
+| key                | type       | default       | description                                                          |
+|--------------------|------------|---------------|----------------------------------------------------------------------|
+| `root_dir`         | string     | $HOME/.meetup | The local directory where meetup meetings are stored.                |
+| `editor`           | []string   | $EDITOR       | The command to use to open files.                                    |
+| `default_metadata` | Metadata   |               | Override the default meetup metadata when creating a new meetup dir. |
 
 Some values you can only configure at the metup directory level (eg GroupBy). These can be found at `<meetup_dir>/.metadata`:
 

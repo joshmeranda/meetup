@@ -12,10 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// todo: configure deafult query values (most useful for dates)
-// todo: move query mathicng into functions owned by each query type
-// todo: MeetingWildcard -> MeetingQuery
-
 const (
 	DateFormat = "2006-01-02"
 )

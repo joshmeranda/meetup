@@ -31,9 +31,7 @@ func (m Meeting) String() string {
 type MeetingQuery struct {
 	Name   glob.Glob
 	Domain glob.Glob
-
-	// todo: change to date range
-	Date glob.Glob
+	Date   glob.Glob
 }
 
 func (mw MeetingQuery) Match(m Meeting) bool {

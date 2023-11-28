@@ -31,8 +31,9 @@ func DefaultMetadata() Metadata {
 }
 
 type Config struct {
-	RootDir string   `yaml:"root_dir"`
-	Editor  []string `yaml:"editor"`
+	RootDir         string   `yaml:"root_dir"`
+	Editor          []string `yaml:"editor"`
+	DefaultMetadata Metadata `yaml:"default_metadata"`
 }
 
 func DefaultConfig() (Config, error) {
@@ -47,8 +48,9 @@ func DefaultConfig() (Config, error) {
 	}
 
 	return Config{
-		RootDir: path.Join(homeDir, ".meetup"),
-		Editor:  []string{editor},
+		RootDir:         path.Join(homeDir, ".meetup"),
+		Editor:          []string{editor},
+		DefaultMetadata: DefaultMetadata(),
 	}, nil
 }
 
@@ -60,7 +62,6 @@ type Manager struct {
 }
 
 func NewManager(config Config) (Manager, error) {
-	// todo: we might want to allow users to pass in metadata to use if no meeting dir exits
 	data, err := os.ReadFile(path.Join(config.RootDir, MetadataFilename))
 	if err != nil && !os.IsNotExist(err) {
 		return Manager{}, fmt.Errorf("could not read metadata file: %w", err)
@@ -70,7 +71,7 @@ func NewManager(config Config) (Manager, error) {
 		data = make([]byte, 0)
 	}
 
-	metadata := DefaultMetadata()
+	metadata := config.DefaultMetadata
 	if err := yaml.Unmarshal(data, &metadata); err != nil {
 		return Manager{}, fmt.Errorf("could not load metadata: %w", err)
 	}
