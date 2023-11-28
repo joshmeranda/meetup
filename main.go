@@ -12,6 +12,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// todo: configure deafult query values (most useful for dates)
+// todo: move query mathicng into functions owned by each query type
+// todo: MeetingWildcard -> MeetingQuery
+
 const (
 	DateFormat = "2006-01-02"
 )
@@ -89,7 +93,7 @@ func MeetingList(ctx *cli.Context) error {
 		return err
 	}
 
-	meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+	meetings, err := manager.ListMeetings(meetup.MeetingQuery{
 		Name:   glob.MustCompile(ctx.String("name")),
 		Date:   glob.MustCompile(ctx.String("date")),
 		Domain: glob.MustCompile(ctx.String("domain")),
@@ -235,7 +239,7 @@ func TaskList(ctx *cli.Context) error {
 	}
 
 	query := meetup.TaskQuery{
-		Meeting: meetup.MeetingWildcard{
+		Meeting: meetup.MeetingQuery{
 			Name:   glob.MustCompile(ctx.String("name")),
 			Domain: glob.MustCompile(ctx.String("domain")),
 			Date:   glob.MustCompile(ctx.String("date")),

@@ -34,7 +34,7 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 
 	When("there are no meetings", func() {
 		It("can list meetings", func() {
-			meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+			meetings, err := manager.ListMeetings(meetup.MeetingQuery{
 				Date:   glob.MustCompile("*"),
 				Name:   glob.MustCompile("*"),
 				Domain: glob.MustCompile("*"),
@@ -66,7 +66,7 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 	})
 
 	It("can list meetings", func() {
-		meetings, err := manager.ListMeetings(meetup.MeetingWildcard{
+		meetings, err := manager.ListMeetings(meetup.MeetingQuery{
 			Date:   glob.MustCompile("*"),
 			Name:   glob.MustCompile("*"),
 			Domain: glob.MustCompile("*double"),

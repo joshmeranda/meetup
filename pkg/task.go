@@ -20,9 +20,15 @@ type Task struct {
 }
 
 type TaskQuery struct {
-	Meeting     MeetingWildcard
+	Meeting     MeetingQuery
 	Complete    *bool
 	Description glob.Glob
+}
+
+func (t TaskQuery) Match(task Task) bool {
+	return t.Meeting.Match(task.Meeting) &&
+		(t.Complete == nil || *t.Complete == task.Complete) &&
+		t.Description.Match(task.Description)
 }
 
 func (m *Manager) Tasks(query TaskQuery) ([]Task, error) {
@@ -64,7 +70,7 @@ func (m *Manager) Tasks(query TaskQuery) ([]Task, error) {
 				continue
 			}
 
-			if query.Complete != nil && *query.Complete != task.Complete || !query.Description.Match(task.Description) {
+			if !query.Match(task) {
 				continue
 			}
 

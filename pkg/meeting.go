@@ -28,7 +28,7 @@ func (m Meeting) String() string {
 	return fmt.Sprintf("%s %s %s", m.Date, m.Domain, m.Name)
 }
 
-type MeetingWildcard struct {
+type MeetingQuery struct {
 	Name   glob.Glob
 	Domain glob.Glob
 
@@ -36,7 +36,7 @@ type MeetingWildcard struct {
 	Date glob.Glob
 }
 
-func (mw MeetingWildcard) Match(m Meeting) bool {
+func (mw MeetingQuery) Match(m Meeting) bool {
 	return mw.Name.Match(m.Name) &&
 		mw.Domain.Match(m.Domain) &&
 		mw.Date.Match(m.Date)
@@ -112,7 +112,7 @@ func (m *Manager) OpenMeeting(meeting Meeting) error {
 	return nil
 }
 
-func (m *Manager) ListMeetings(mw MeetingWildcard) ([]Meeting, error) {
+func (m *Manager) ListMeetings(mw MeetingQuery) ([]Meeting, error) {
 	meetings := []Meeting{}
 
 	err := filepath.WalkDir(m.RootDir, func(path string, entry fs.DirEntry, err error) error {
@@ -163,7 +163,7 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 
 	oldGs := m.metadata.GroupBy
 
-	meetings, err := m.ListMeetings(MeetingWildcard{
+	meetings, err := m.ListMeetings(MeetingQuery{
 		Name:   glob.MustCompile("*"),
 		Domain: glob.MustCompile("*"),
 		Date:   glob.MustCompile("*"),

@@ -55,7 +55,7 @@ var _ = Describe("Task", Ordered, func() {
 
 	It("can list all tasks", func() {
 		tasks, err := manager.Tasks(meetup.TaskQuery{
-			Meeting: meetup.MeetingWildcard{
+			Meeting: meetup.MeetingQuery{
 				Date:   glob.MustCompile("*"),
 				Name:   glob.MustCompile("*"),
 				Domain: glob.MustCompile("*"),
@@ -130,7 +130,7 @@ var _ = Describe("Task", Ordered, func() {
 	When("filtering tasks", func() {
 		It("can list completed tasks", func() {
 			tasks, err := manager.Tasks(meetup.TaskQuery{
-				Meeting: meetup.MeetingWildcard{
+				Meeting: meetup.MeetingQuery{
 					Date:   glob.MustCompile("*"),
 					Name:   glob.MustCompile("*"),
 					Domain: glob.MustCompile("*"),
@@ -175,7 +175,7 @@ var _ = Describe("Task", Ordered, func() {
 
 		It("can list uncompleted tasks", func() {
 			tasks, err := manager.Tasks(meetup.TaskQuery{
-				Meeting: meetup.MeetingWildcard{
+				Meeting: meetup.MeetingQuery{
 					Date:   glob.MustCompile("*"),
 					Name:   glob.MustCompile("*"),
 					Domain: glob.MustCompile("*"),
@@ -220,7 +220,7 @@ var _ = Describe("Task", Ordered, func() {
 
 		It("can list tasks by description", func() {
 			tasks, err := manager.Tasks(meetup.TaskQuery{
-				Meeting: meetup.MeetingWildcard{
+				Meeting: meetup.MeetingQuery{
 					Date:   glob.MustCompile("*"),
 					Name:   glob.MustCompile("*"),
 					Domain: glob.MustCompile("*"),
