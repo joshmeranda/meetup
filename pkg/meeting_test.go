@@ -23,6 +23,9 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		manager, err = meetup.NewManager(meetup.Config{
 			RootDir: meetupDir,
 			Editor:  []string{"touch"},
+			DefaultMetadata: meetup.Metadata{
+				GroupBy: meetup.GroupByDomain,
+			},
 		})
 
 		Expect(err).ToNot(HaveOccurred())
