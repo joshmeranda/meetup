@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gobwas/glob"
 )
@@ -31,6 +32,49 @@ func (t TaskQuery) Match(task Task) bool {
 		t.Description.Match(task.Description)
 }
 
+func (m *Manager) searchMeeting(meeting Meeting, query TaskQuery) ([]Task, error) {
+	tasks := []Task{}
+
+	meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+
+	meetingFile, err := os.Open(meetingPath)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(meetingFile)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		var task Task
+		switch {
+		case strings.HasPrefix(line, DefaultTaskPrefix):
+			task = Task{
+				Meeting:     meeting,
+				Complete:    false,
+				Description: strings.TrimPrefix(line, DefaultTaskPrefix),
+			}
+		case strings.HasPrefix(line, DefaultTaskCompletedPrefix):
+			task = Task{
+				Meeting:     meeting,
+				Complete:    true,
+				Description: strings.TrimPrefix(line, DefaultTaskCompletedPrefix),
+			}
+		default:
+			continue
+		}
+
+		if !query.Match(task) {
+			continue
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+}
+
 func (m *Manager) Tasks(query TaskQuery) ([]Task, error) {
 	meetings, err := m.ListMeetings(query.Meeting)
 	if err != nil {
@@ -39,44 +83,33 @@ func (m *Manager) Tasks(query TaskQuery) ([]Task, error) {
 
 	tasks := []Task{}
 
+	jq := NewJobQueue(5)
+	errChan := make(chan error)
+	wg := sync.WaitGroup{}
+	wg.Add(len(meetings))
+
 	for _, meeting := range meetings {
-		meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
-
-		meetingFile, err := os.Open(meetingPath)
-		if err != nil {
+		select {
+		case err := <-errChan:
 			return nil, err
+		default:
 		}
 
-		scanner := bufio.NewScanner(meetingFile)
+		meeting := meeting
 
-		// todo: we probably want to break this into a work group or something
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-			var task Task
-			switch {
-			case strings.HasPrefix(line, DefaultTaskPrefix):
-				task = Task{
-					Meeting:     meeting,
-					Complete:    false,
-					Description: strings.TrimPrefix(line, DefaultTaskPrefix),
-				}
-			case strings.HasPrefix(line, DefaultTaskCompletedPrefix):
-				task = Task{
-					Meeting:     meeting,
-					Complete:    true,
-					Description: strings.TrimPrefix(line, DefaultTaskCompletedPrefix),
-				}
-			default:
-				continue
+		jq.Run(func() {
+			foundTasks, err := m.searchMeeting(meeting, query)
+			if err != nil {
+				errChan <- err
+				return
 			}
 
-			if !query.Match(task) {
-				continue
-			}
-
-			tasks = append(tasks, task)
-		}
+			tasks = append(tasks, foundTasks...)
+			wg.Done()
+		})
 	}
+
+	wg.Wait()
 
 	return tasks, nil
 }
