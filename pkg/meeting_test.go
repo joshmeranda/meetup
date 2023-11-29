@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobwas/glob"
 	meetup "github.com/joshmeranda/meetup/pkg"
+	"github.com/otiai10/copy"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -97,6 +98,8 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		Expect(path.Join(meetupDir, "2021-01-01", "default", "sample")).Should(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "2021-01-01", "single", "sample")).Should(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "2021-01-01", "single", "double", "sample")).Should(BeAnExistingFile())
+
+		Expect(copy.Copy(meetupDir, "test-meetup-dir")).ToNot(HaveOccurred())
 	})
 
 	It("can remove meetings", func() {

@@ -35,7 +35,8 @@ func (t TaskQuery) Match(task Task) bool {
 func (m *Manager) searchMeeting(meeting Meeting, query TaskQuery) ([]Task, error) {
 	tasks := []Task{}
 
-	meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	// meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	meetingPath := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
 
 	meetingFile, err := os.Open(meetingPath)
 	if err != nil {

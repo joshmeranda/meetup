@@ -12,16 +12,25 @@ import (
 	"github.com/gobwas/glob"
 )
 
-const (
-	BackupSuffix  = ".backup"
-	BackupDirName = ".backup"
-)
-
 type Meeting struct {
 	Name     string
 	Date     string
 	Domain   string
 	Template string
+}
+
+// GetPath retusn the path to the meeting with meetupDir as the root.
+func (m Meeting) GetPath(meetupDir string, gs GroupStrategy) string {
+	domainComponents := path.Join(strings.Split(m.Domain, ".")...)
+
+	switch gs {
+	case GroupByDomain:
+		return path.Join(meetupDir, domainComponents, m.Date, m.Name)
+	case GroupByDate:
+		return path.Join(meetupDir, m.Date, domainComponents, m.Name)
+	default:
+		panic(fmt.Sprintf("unknown group_by: %s", gs))
+	}
 }
 
 func (m Meeting) String() string {
@@ -40,28 +49,10 @@ func (mw MeetingQuery) Match(m Meeting) bool {
 		mw.Date.Match(m.Date)
 }
 
-func (m *Manager) pathForMeeting(gs GroupStrategy, meeting Meeting, isBackup bool) string {
-	var topLevel string
-	if isBackup {
-		topLevel = path.Join(m.Config.RootDir, BackupDirName)
-	} else {
-		topLevel = m.Config.RootDir
-	}
-
-	domainComponents := path.Join(strings.Split(meeting.Domain, ".")...)
-
-	switch gs {
-	case GroupByDomain:
-		return path.Join(topLevel, domainComponents, meeting.Date, meeting.Name)
-	case GroupByDate:
-		return path.Join(topLevel, meeting.Date, domainComponents, meeting.Name)
-	default:
-		panic(fmt.Sprintf("unknown group_by: %s", m.metadata.GroupBy))
-	}
-}
-
 func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
-	meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	// meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	meetingPath := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
+
 	meetingDir := path.Dir(meetingPath)
 
 	if err := os.MkdirAll(meetingDir, 0755); err != nil {
@@ -118,7 +109,7 @@ func (m *Manager) ListMeetings(mw MeetingQuery) ([]Meeting, error) {
 			return err
 		}
 
-		if entry.IsDir() && entry.Name() == TemplateDirName || entry.Name() == BackupDirName {
+		if entry.IsDir() && entry.Name() == TemplateDirName {
 			return filepath.SkipDir
 		}
 
@@ -144,7 +135,9 @@ func (m *Manager) ListMeetings(mw MeetingQuery) ([]Meeting, error) {
 }
 
 func (m *Manager) RemoveMeeting(meeting Meeting) error {
-	path := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	// todo: cleanup empty directories
+	// path := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
+	path := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
 
 	if err := os.Remove(path); err != nil {
 		return fmt.Errorf("could not delete meeting: %w", err)
@@ -154,7 +147,7 @@ func (m *Manager) RemoveMeeting(meeting Meeting) error {
 }
 
 func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
-	// todo: doesn't handle pre-existing backups or templates
+	// todo: will leave behind some empty directories
 	if m.metadata.GroupBy == newGs {
 		return nil
 	}
@@ -170,40 +163,22 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 		return fmt.Errorf("could not list meetings: %w", err)
 	}
 
-	rootBackup := m.RootDir + BackupSuffix
-	if err := os.Rename(m.RootDir, rootBackup); err != nil {
-		return fmt.Errorf("could not backup root directory: %w", err)
-	}
+	for _, meeting := range meetings {
+		oldMeetingPath := meeting.GetPath(m.RootDir, oldGs)
+		newMeetingPath := meeting.GetPath(m.RootDir, newGs)
 
-	if err := os.MkdirAll(m.RootDir, 0755); err != nil {
-		return fmt.Errorf("could not create root directory: %w", err)
+		if err := os.MkdirAll(path.Dir(newMeetingPath), 0755); err != nil {
+			return fmt.Errorf("could not create meeting directory: %w", err)
+		}
+
+		if err := os.Rename(oldMeetingPath, newMeetingPath); err != nil {
+			return fmt.Errorf("could not move meeting: %w", err)
+		}
 	}
 
 	m.metadata.GroupBy = newGs
 	if err := m.SyncMetadata(); err != nil {
 		return fmt.Errorf("could not sync metadata: %w", err)
-	}
-
-	if err := os.Rename(rootBackup, path.Join(m.RootDir, BackupDirName)); err != nil {
-		return fmt.Errorf("could not move meeting backup, backup can be found at %s: %w", rootBackup, err)
-	}
-
-	for _, meeting := range meetings {
-		backupMeetingPath := m.pathForMeeting(oldGs, meeting, true)
-		meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
-
-		if err := os.MkdirAll(path.Dir(meetingPath), 0755); err != nil {
-			return fmt.Errorf("could not create meeting directory: %w", err)
-		}
-
-		if err := os.Rename(backupMeetingPath, meetingPath); err != nil {
-			return fmt.Errorf("could not move meeting: %w", err)
-		}
-	}
-
-	// we don't deferf this to prevent permanantly losing all meetings if something above goes wrong
-	if err := os.RemoveAll(rootBackup); err != nil {
-		return fmt.Errorf("could not remove backup: %w", err)
 	}
 
 	return nil
