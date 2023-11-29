@@ -7,9 +7,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"text/template"
 
 	"github.com/gobwas/glob"
+	"github.com/otiai10/copy"
 )
 
 type Meeting struct {
@@ -135,19 +137,28 @@ func (m *Manager) ListMeetings(mw MeetingQuery) ([]Meeting, error) {
 }
 
 func (m *Manager) RemoveMeeting(meeting Meeting) error {
-	// todo: cleanup empty directories
-	// path := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
-	path := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
+	meetingPath := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
 
-	if err := os.Remove(path); err != nil {
+	if err := os.Remove(meetingPath); err != nil {
 		return fmt.Errorf("could not delete meeting: %w", err)
+	}
+
+	for domainPath := path.Dir(meetingPath); domainPath != m.RootDir; domainPath = path.Dir(domainPath) {
+		err := os.Remove(domainPath)
+		if err != nil {
+			pathErr := err.(*os.PathError)
+			if pathErr.Err == syscall.ENOTEMPTY {
+				break
+			}
+
+			return fmt.Errorf("could not delete meeting: %w", err)
+		}
 	}
 
 	return nil
 }
 
 func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
-	// todo: will leave behind some empty directories
 	if m.metadata.GroupBy == newGs {
 		return nil
 	}
@@ -171,8 +182,12 @@ func (m *Manager) UpdateMeetingGroupBy(newGs GroupStrategy) error {
 			return fmt.Errorf("could not create meeting directory: %w", err)
 		}
 
-		if err := os.Rename(oldMeetingPath, newMeetingPath); err != nil {
-			return fmt.Errorf("could not move meeting: %w", err)
+		if err := copy.Copy(oldMeetingPath, newMeetingPath); err != nil {
+			return fmt.Errorf("could not copy meeting: %w", err)
+		}
+
+		if err := m.RemoveMeeting(meeting); err != nil {
+			return fmt.Errorf("could not remove meeting: %w", err)
 		}
 	}
 
