@@ -10,7 +10,7 @@ GO_BUILD=go build ${BUILD_FLAGS}
 GO_INSTALL=go install ${BUILD_FLAGS}
 GO_FMT=go fmt
 GO_TEST=go test
-GINKGO=ginkgo run
+GINKGO=go run github.com/onsi/ginkgo/v2/ginkgo
 
 ifdef VERBOSE
 	GO_BUILD += -v
@@ -50,7 +50,6 @@ bin/meetup: ${SOURCES}
 install: ${SOURCES}
 	${GO_INSTALL} .
 
-
 # # # # # # # # # # # # # # # # # # # #
 # Test                                #
 # # # # # # # # # # # # # # # # # # # #
@@ -58,7 +57,7 @@ install: ${SOURCES}
 .PHONY: test
 
 test:
-	${GINKGO} ./pkg
+	${GINKGO} run ./...
 
 # # # # # # # # # # # # # # # # # # # #
 # Clean                               #

@@ -9,8 +9,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// todo: add default metadata to manager config
-
 type GroupStrategy string
 
 const (
@@ -21,7 +19,8 @@ const (
 )
 
 type Metadata struct {
-	GroupBy GroupStrategy `yaml:"group_by"`
+	GroupBy         GroupStrategy     `yaml:"group_by"`
+	DomainTemplates map[string]string `yaml:"domain_templates"`
 }
 
 func DefaultMetadata() Metadata {
@@ -97,7 +96,7 @@ func NewManager(config Config) (Manager, error) {
 
 func (m *Manager) SyncMetadata() error {
 	data, err := yaml.Marshal(m.metadata)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("error marshalling metadata: %w", err)
 	}
 

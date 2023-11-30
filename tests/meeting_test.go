@@ -63,9 +63,22 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 			Expect(manager.OpenMeeting(meeting)).ToNot(HaveOccurred())
 		}
 
-		Expect(path.Join(meetupDir, "default", "2021-01-01", "sample")).Should(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "triple", "2021-01-01", "sample")).Should(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "single", "2021-01-01", "sample")).Should(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "single", "double", "2021-01-01", "sample")).Should(BeAnExistingFile())
+	})
+
+	It("can reopen meetings", func() {
+		targetMeeting := testMeetings[0]
+		meetingPath := targetMeeting.GetPath(meetupDir, meetup.GroupByDomain)
+
+		Expect(os.WriteFile(meetingPath, []byte("test"), 0644)).ToNot(HaveOccurred())
+
+		Expect(manager.OpenMeeting(targetMeeting)).ToNot(HaveOccurred())
+
+		data, err := os.ReadFile(meetingPath)
+		Expect(err).ShouldNot(HaveOccurred())
+		Expect(string(data)).To(Equal("test"))
 	})
 
 	It("can list meetings", func() {
@@ -86,27 +99,16 @@ var _ = Describe("ManageMeeting", Ordered, func() {
 		Expect(meetings).To(ConsistOf(expected))
 	})
 
-	It("can re-organize meetup dirs", func() {
-		err = manager.UpdateMeetingGroupBy(meetup.GroupByDate)
-		Expect(err).ToNot(HaveOccurred())
-
-		data, err := os.ReadFile(path.Join(meetupDir, meetup.MetadataFilename))
-		Expect(err).ToNot(HaveOccurred())
-		Expect(string(data)).To(Equal("group_by: date\n"))
-
-		Expect(path.Join(meetupDir, "2021-01-01", "default", "sample")).Should(BeAnExistingFile())
-		Expect(path.Join(meetupDir, "2021-01-01", "single", "sample")).Should(BeAnExistingFile())
-		Expect(path.Join(meetupDir, "2021-01-01", "single", "double", "sample")).Should(BeAnExistingFile())
-	})
-
 	It("can remove meetings", func() {
 		for _, meeting := range testMeetings {
 			Expect(manager.RemoveMeeting(meeting)).ToNot(HaveOccurred())
 		}
 
-		Expect(path.Join(meetupDir, "2021-01-01", "default", "sample")).ShouldNot(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "2021-01-01", "triple", "sample")).ShouldNot(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "2021-01-01", "triple")).ShouldNot(BeADirectory())
 		Expect(path.Join(meetupDir, "2021-01-01", "single", "sample")).ShouldNot(BeAnExistingFile())
 		Expect(path.Join(meetupDir, "2021-01-01", "single", "double", "sample")).ShouldNot(BeAnExistingFile())
+		Expect(path.Join(meetupDir, "2021-01-01", "single")).ShouldNot(BeADirectory())
 
 		Expect(path.Join(meetupDir, "2021-01-01")).ShouldNot(BeADirectory())
 	})

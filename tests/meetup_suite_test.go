@@ -10,12 +10,14 @@ import (
 )
 
 var (
+	meetupSampleDir = path.Join("meetup-samples")
+
 	exampleDir = path.Join("..", "examples")
 
 	testMeetings = []meetup.Meeting{
 		{
 			Name:   "sample",
-			Domain: "default",
+			Domain: "triple",
 			Date:   "2021-01-01",
 		},
 		{

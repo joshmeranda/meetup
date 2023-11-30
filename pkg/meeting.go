@@ -52,10 +52,12 @@ func (mw MeetingQuery) Match(m Meeting) bool {
 }
 
 func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
-	// meetingPath := m.pathForMeeting(m.metadata.GroupBy, meeting, false)
 	meetingPath := meeting.GetPath(m.RootDir, m.metadata.GroupBy)
-
 	meetingDir := path.Dir(meetingPath)
+
+	if _, err := os.Stat(meetingDir); err == nil {
+		return meetingPath, nil
+	}
 
 	if err := os.MkdirAll(meetingDir, 0755); err != nil {
 		return "", fmt.Errorf("could not create meeting directory: %w", err)
@@ -70,9 +72,13 @@ func (m *Manager) createMeetingFile(meeting Meeting) (string, error) {
 
 	defer outFile.Close()
 
+	if template, found := m.metadata.DomainTemplates[meeting.Domain]; meeting.Template == "" && found {
+		// todo: warn if template is not found
+		meeting.Template = template
+	}
+
 	if meeting.Template != "" {
 		templatePath := path.Join(m.Config.RootDir, TemplateDirName, meeting.Template)
-
 		template, err := template.ParseFiles(templatePath)
 		if err != nil {
 			return "", fmt.Errorf("could not parse template: %w", err)
@@ -113,6 +119,10 @@ func (m *Manager) ListMeetings(mw MeetingQuery) ([]Meeting, error) {
 
 		if entry.IsDir() && entry.Name() == TemplateDirName {
 			return filepath.SkipDir
+		}
+
+		if entry.Name() == MetadataFilename {
+			return nil
 		}
 
 		if !entry.IsDir() {

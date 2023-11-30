@@ -1,21 +1,22 @@
-package meetup
+package meetup_test
 
 import (
 	"sync"
 	"time"
 
+	meetup "github.com/joshmeranda/meetup/pkg"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("JobQueue", func() {
-	var jq *JobQueue
+	var jq *meetup.JobQueue
 
 	var n int
 	var nMu sync.Mutex
 
 	BeforeEach(func() {
-		jq = NewJobQueue(2)
+		jq = meetup.NewJobQueue(2)
 
 		n = 0
 		nMu = sync.Mutex{}

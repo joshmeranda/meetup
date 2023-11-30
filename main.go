@@ -261,6 +261,7 @@ func TaskList(ctx *cli.Context) error {
 	return nil
 }
 
+// todo: add completion
 func Run(args []string) error {
 	// todo: duplicated meeting query flags
 	app := cli.App{

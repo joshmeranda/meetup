@@ -12,8 +12,6 @@ const (
 	TemplateDirName = ".templates"
 )
 
-// todo: allow set deafult template
-
 func (m *Manager) AddTemplate(paths ...string) error {
 	dir := path.Join(m.RootDir, TemplateDirName)
 

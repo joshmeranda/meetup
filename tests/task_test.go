@@ -1,7 +1,6 @@
 package meetup_test
 
 import (
-	"os"
 	"path"
 
 	"github.com/gobwas/glob"
@@ -10,50 +9,23 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const testTemplate = `# {{.Name}} - {{.Date}} - {{.Domain}}
-
-## Tasks
-
-- [ ] do something for {{ .Domain }}-{{ .Name }}
-- [x] make schedule for {{ .Domain }}-{{ .Name }}
-`
-
 func ToPtr[T any](t T) *T {
 	return &t
 }
 
 var _ = Describe("Task", Ordered, func() {
-	var meetupDir string
 	var manager meetup.Manager
 	var err error
 
 	BeforeEach(func() {
-		meetupDir, err = os.MkdirTemp("", "meetup-test")
-		Expect(err).ToNot(HaveOccurred())
-
 		manager, err = meetup.NewManager(meetup.Config{
-			RootDir: meetupDir,
+			RootDir: path.Join(meetupSampleDir, "group-by-domain"),
 			Editor:  []string{"touch"},
 			DefaultMetadata: meetup.Metadata{
 				GroupBy: meetup.GroupByDomain,
 			},
 		})
-		Expect(err).ToNot(HaveOccurred())
-
-		templatePath := path.Join(meetupDir, "template.md")
-		Expect(os.WriteFile(templatePath, []byte(testTemplate), 0600)).ToNot(HaveOccurred())
-
-		Expect(manager.AddTemplate(templatePath)).ToNot(HaveOccurred())
-		Expect(os.Remove(templatePath)).ToNot(HaveOccurred())
-
-		for _, meeting := range testMeetings {
-			meeting.Template = "template.md"
-			Expect(manager.OpenMeeting(meeting)).ToNot(HaveOccurred())
-		}
-	})
-
-	AfterEach(func() {
-		os.RemoveAll(meetupDir)
+		Expect(err).ShouldNot(HaveOccurred())
 	})
 
 	It("can list all tasks", func() {
@@ -73,19 +45,19 @@ var _ = Describe("Task", Ordered, func() {
 				Meeting: meetup.Meeting{
 					Name:   "sample",
 					Date:   "2021-01-01",
-					Domain: "default",
+					Domain: "triple",
 				},
 				Complete:    false,
-				Description: "do something for default-sample",
+				Description: "do something for triple-sample",
 			},
 			{
 				Meeting: meetup.Meeting{
 					Name:   "sample",
 					Date:   "2021-01-01",
-					Domain: "default",
+					Domain: "triple",
 				},
 				Complete:    true,
-				Description: "make schedule for default-sample",
+				Description: "make schedule for triple-sample",
 			},
 
 			{
@@ -148,10 +120,10 @@ var _ = Describe("Task", Ordered, func() {
 					Meeting: meetup.Meeting{
 						Name:   "sample",
 						Date:   "2021-01-01",
-						Domain: "default",
+						Domain: "triple",
 					},
 					Complete:    true,
-					Description: "make schedule for default-sample",
+					Description: "make schedule for triple-sample",
 				},
 				{
 					Meeting: meetup.Meeting{
@@ -193,10 +165,10 @@ var _ = Describe("Task", Ordered, func() {
 					Meeting: meetup.Meeting{
 						Name:   "sample",
 						Date:   "2021-01-01",
-						Domain: "default",
+						Domain: "triple",
 					},
 					Complete:    false,
-					Description: "do something for default-sample",
+					Description: "do something for triple-sample",
 				},
 				{
 					Meeting: meetup.Meeting{
@@ -238,10 +210,10 @@ var _ = Describe("Task", Ordered, func() {
 					Meeting: meetup.Meeting{
 						Name:   "sample",
 						Date:   "2021-01-01",
-						Domain: "default",
+						Domain: "triple",
 					},
 					Complete:    false,
-					Description: "do something for default-sample",
+					Description: "do something for triple-sample",
 				},
 				{
 					Meeting: meetup.Meeting{
