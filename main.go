@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -57,16 +58,30 @@ func GetManager() (meetup.Manager, error) {
 }
 
 func MeetingOpen(ctx *cli.Context) error {
-	if ctx.NArg() > 2 {
+	if ctx.NArg() > 1 {
 		return fmt.Errorf("too many arguments")
 	}
 
-	if ctx.NArg() < 2 {
+	if ctx.NArg() < 1 {
 		return fmt.Errorf("missing required arguments")
 	}
 
-	domain := ctx.Args().Get(0)
-	name := ctx.Args().Get(1)
+	rawDomain := ctx.Args().First()
+	lastSep := strings.LastIndex(rawDomain, ".")
+
+	if lastSep == -1 {
+		return fmt.Errorf("invalid domain: '%s'", rawDomain)
+	}
+
+	domain, name := rawDomain[:lastSep], rawDomain[lastSep+1:]
+
+	if domain == "" {
+		return fmt.Errorf("invalid domain: '%s'", domain)
+	}
+
+	if name == "" {
+		return fmt.Errorf("invalid name: '%s'", name)
+	}
 
 	manager, err := GetManager()
 	if err != nil {
@@ -276,7 +291,7 @@ func Run(args []string) error {
 					{
 						Name:      "open",
 						Usage:     "open an existing or create a new meeting",
-						UsageText: "meetup open <domain> <name>",
+						UsageText: "meetup open <domain>.<name>",
 						Action:    MeetingOpen,
 						Flags: []cli.Flag{
 							&cli.StringFlag{
