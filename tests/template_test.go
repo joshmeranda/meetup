@@ -53,7 +53,7 @@ var _ = Describe("ManageTemplates", Ordered, func() {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		expected := "2021-01-01 meetup.template.test example-meeting"
+		expected := "2021-01-01 meetup.template.test Example-M<eeting"
 		meetingFile := path.Join(meetupDir, "meetup", "template", "test", "2021-01-01", "example-meeting")
 		data, err := os.ReadFile(meetingFile)
 

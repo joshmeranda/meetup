@@ -1,6 +1,6 @@
 {{ .Date }} {{ .Domain }} {{.Name}}
 
-# {{ .Name }}
+# {{ call Title }}
 
 ## Preparation
 

@@ -6,12 +6,17 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"text/template"
 
 	"github.com/gobwas/glob"
 	"github.com/otiai10/copy"
+)
+
+var (
+	seperators = []byte{' ', '\t', '\n', '-', '_'}
 )
 
 type Meeting struct {
@@ -37,6 +42,20 @@ func (m Meeting) GetPath(meetupDir string, gs GroupStrategy) string {
 
 func (m Meeting) String() string {
 	return fmt.Sprintf("%s %s %s", m.Date, m.Domain, m.Name)
+}
+
+func (m Meeting) Title() string {
+	builder := strings.Builder{}
+
+	for i, r := range m.Name {
+		if i == 0 || slices.Contains(seperators, byte(r)) {
+			builder.WriteRune(rune(strings.ToUpper(string(r))[0]))
+		} else {
+			builder.WriteRune(rune(strings.ToLower(string(r))[0]))
+		}
+	}
+
+	return builder.String()
 }
 
 type MeetingQuery struct {
